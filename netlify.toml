@@ -1,0 +1,7 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/editor"
+  to = "/video-editor/"
+  status = 301
