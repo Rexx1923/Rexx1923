@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REXX RIDER</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090b10;color:#fff;font-family:Arial,sans-serif;overflow:hidden}#wrap{height:100vh;display:grid;place-items:center;padding:12px}canvas{width:min(100%,1100px);height:auto;max-height:92vh;border:2px solid #252a35;border-radius:18px;box-shadow:0 0 40px #000;background:#111;touch-action:none}#hint{position:fixed;bottom:12px;left:0;right:0;text-align:center;color:#aaa;font-size:13px;pointer-events:none}button{position:fixed;right:18px;top:18px;padding:10px 15px;border:0;border-radius:10px;background:#fff;color:#111;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game" width="1100" height="650"></canvas></div>
+<button id="restart">RESTART</button><div id="hint">A/D or ←/→ steer • W/↑ accelerate • S/↓ brake • SPACE nitro</div>
+<script>
+const c=document.getElementById('game'),x=c.getContext('2d'),W=c.width,H=c.height;
+const keys={}; addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='Enter'&&over)reset()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);document.getElementById('restart').onclick=reset;
+let bike,rocks,coins,dist,score,speed,over,last,spawn;
+function reset(){bike={x:W/2,y:H-115,vx:0};rocks=[];coins=[];dist=0;score=0;speed=7;over=false;last=performance.now();spawn=0;requestAnimationFrame(loop)}
+function road(){let t=dist*.004; x.fillStyle='#11151c';x.fillRect(0,0,W,H);x.fillStyle='#28302d';x.fillRect(130,0,W-260,H);x.fillStyle='#1b2025';x.fillRect(170,0,W-340,H);x.strokeStyle='#d8d8d8';x.lineWidth=5;x.setLineDash([35,35]);x.lineDashOffset=dist%70;x.beginPath();x.moveTo(W/2,0);x.lineTo(W/2,H);x.stroke();x.setLineDash([]);x.fillStyle='#e6b93f';x.fillRect(125,0,8,H);x.fillRect(W-133,0,8,H);}
+function bikeDraw(){x.save();x.translate(bike.x,bike.y);x.rotate(bike.vx*.035);x.fillStyle='#050505';x.beginPath();x.ellipse(-22,22,10,27,0,0,7);x.ellipse(22,22,10,27,0,0,7);x.fill();x.fillStyle='#e22';x.beginPath();x.moveTo(0,-43);x.lineTo(27,25);x.lineTo(0,35);x.lineTo(-27,25);x.closePath();x.fill();x.fillStyle='#ddd';x.fillRect(-5,-27,10,35);x.fillStyle='#151515';x.beginPath();x.arc(0,-50,14,0,7);x.fill();x.fillStyle='#fff';x.fillRect(-8,-55,16,4);x.restore()}
+function rockDraw(o){x.save();x.translate(o.x,o.y);x.rotate(o.r);x.fillStyle=o.kind==='car'?'#4e79a7':'#555';if(o.kind==='car'){x.fillRect(-24,-36,48,72);x.fillStyle='#9ed1e8';x.fillRect(-17,-25,34,17);x.fillStyle='#222';x.fillRect(-27,-28,7,16);x.fillRect(20,-28,7,16);x.fillRect(-27,15,7,16);x.fillRect(20,15,7,16)}else{x.beginPath();x.moveTo(-28,18);x.lineTo(-20,-22);x.lineTo(8,-31);x.lineTo(30,8);x.lineTo(12,28);x.closePath();x.fill()}x.restore()}
+function coinDraw(o){x.fillStyle='#ffd34d';x.beginPath();x.arc(o.x,o.y,10,0,7);x.fill();x.fillStyle='#9a6b00';x.font='bold 12px Arial';x.textAlign='center';x.fillText('$',o.x,o.y+4)}
+function loop(now){let dt=Math.min((now-last)/16.67,2);last=now;if(!over){let accel=keys.w||keys.arrowup;let brake=keys.s||keys.arrowdown;let steer=(keys.a||keys.arrowleft?-1:0)+(keys.d||keys.arrowright?1:0);let nitro=keys[' '];speed+=accel?.18*dt:-.035*dt;if(brake)speed-=.25*dt;if(nitro&&speed<15)speed+=.12*dt;speed=Math.max(3,Math.min(15,speed));bike.vx+=steer*.75*dt;bike.vx*=.86;bike.x+=bike.vx*dt;bike.x=Math.max(205,Math.min(W-205,bike.x));dist+=speed*dt;score+=Math.floor(speed*dt*.25);spawn-=dt;if(spawn<=0){spawn=22+Math.random()*22;rocks.push({x:225+Math.random()*(W-450),y:-70,r:(Math.random()-.5)*.5,kind:Math.random()<.55?'rock':'car'})}if(Math.random()<.018*dt)coins.push({x:225+Math.random()*(W-450),y:-20});for(const o of rocks)o.y+=speed*dt*1.7;for(const o of coins)o.y+=speed*dt*1.7;rocks=rocks.filter(o=>o.y<H+90);coins=coins.filter(o=>o.y<H+30);for(const o of coins)if(Math.hypot(o.x-bike.x,o.y-bike.y)<35){o.y=999;score+=100}for(const o of rocks)if(Math.abs(o.x-bike.x)<38&&Math.abs(o.y-bike.y)<55)over=true}road();for(const o of coins)coinDraw(o);for(const o of rocks)rockDraw(o);bikeDraw();x.fillStyle='#fff';x.font='bold 22px Arial';x.textAlign='left';x.fillText('REXX RIDER',25,38);x.font='16px Arial';x.fillText('SCORE '+score,25,65);x.fillText('SPEED '+Math.round(speed*18)+' km/h',25,88);if(over){x.fillStyle='rgba(0,0,0,.7)';x.fillRect(0,0,W,H);x.textAlign='center';x.fillStyle='#fff';x.font='bold 58px Arial';x.fillText('CRASHED!',W/2,H/2-35);x.font='24px Arial';x.fillText('Score: '+score,W/2,H/2+10);x.font='18px Arial';x.fillText('Press ENTER or RESTART',W/2,H/2+50)}requestAnimationFrame(loop)}
+reset();
+</script></body></html>
