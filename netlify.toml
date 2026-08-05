@@ -1,0 +1,7 @@
+[build]
+  publish = "rexx-ride"
+
+[[redirects]]
+  from = "/*"
+  to = "/3d-game.html"
+  status = 200
